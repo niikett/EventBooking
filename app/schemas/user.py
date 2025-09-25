@@ -45,7 +45,7 @@ class UserResponse(BaseModel):
     name: str
     role: str
     department: str
-    year: str
+    year: Optional[str] = None
     email: EmailStr
 
 
