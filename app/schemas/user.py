@@ -2,12 +2,12 @@ import re
 from uuid import UUID
 from typing import Optional
 from pydantic import BaseModel, EmailStr, field_validator
-
+from typing import Optional
 
 class UserCreate(BaseModel):
     name: str
     department: str
-    year: str
+    year: Optional[str] = None
     role: str
     email: EmailStr
     password: str

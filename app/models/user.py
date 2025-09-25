@@ -14,7 +14,7 @@ class User(Base):
     email = Column(String(120), unique=True, index=True, nullable=False)
     password = Column(String(255), nullable=False)
     department = Column(String(50), nullable=False)
-    year = Column(String(20), nullable=False)
+    year = Column(String(20), nullable=True)
     role = Column(String(20), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

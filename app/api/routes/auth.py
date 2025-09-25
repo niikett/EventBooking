@@ -22,7 +22,6 @@ router = APIRouter(
     response_model=TokenResponse
 )
 def sign_in(
-    role: str = Query(...),
     user_credentials: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
