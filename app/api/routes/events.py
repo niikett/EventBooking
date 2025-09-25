@@ -91,14 +91,31 @@ def delete_event(
 
 
 # -----------------------------
-# Get Events (All)
+# Get All Events
 # -----------------------------
-@router.get("all-events/", response_model=list[EventResponse])
-def get_registered_events(
+@router.get("/all-events", response_model=list[EventResponse])
+def get_all_events(
     db: Session = Depends(get_db),
     current_user: User = Depends(jwt_token.get_current_user)
 ):
     current_user = db.query(User).filter(User.id == current_user.id).first()
-    
     events = db.query(Event).all()
     return events
+
+
+# -----------------------------
+# Get Single Event by ID
+# -----------------------------
+@router.get("/{event_id}", response_model=EventResponse)
+def get_event_by_id(
+    event_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(jwt_token.get_current_user)
+):
+    current_user = db.query(User).filter(User.id == current_user.id).first()
+
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    return event
