@@ -23,4 +23,4 @@ class Event(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     creator = relationship("User", back_populates="events")
-    registrations = relationship("Registration", back_populates="event")
+    registrations = relationship("Registration", back_populates="event", cascade="all, delete-orphan", passive_deletes=True)

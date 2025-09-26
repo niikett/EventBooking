@@ -112,13 +112,12 @@ def delete_event(
             path = urlparse(event.image_url).path  
             public_id = "/".join(path.split("/")[-2:])
             public_id = public_id.rsplit(".", 1)[0]
-            cloudinary.uploader.destroy(public_id)
-            print(f"Deleted Cloudinary file: {public_id}")
         except Exception as e:
-            print(f"Failed to delete Cloudinary image: {e}")
+            return f"Failed to delete Cloudinary image: {e}"
 
     db.delete(event)
     db.commit()
+
     return {"detail": "Event and associated banner deleted"}
 
 
