@@ -2,7 +2,7 @@ from uuid import UUID
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel
-
+from app.schemas.user import UserResponse
 
 class EventBase(BaseModel):
     title: str
@@ -46,3 +46,8 @@ class EventResponse(EventBase):
 
     class Config:
         orm_mode = True
+
+class EventUsersResponse(BaseModel):
+    total_count: int
+    users: List[UserResponse]
+    volunteers: List[UserResponse]

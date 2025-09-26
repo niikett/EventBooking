@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core import jwt_token
 from app.utils.utils_cloudinary import upload
 from app.models import Event, Registration, User
-from app.schemas.events import EventCreate, EventUpdate, EventResponse
+from app.schemas.events import EventCreate, EventUpdate, EventResponse, EventUsersResponse, UserResponse
 from app.core.config_db import get_db
 
 router = APIRouter(
@@ -151,3 +151,45 @@ def get_event_by_id(
         raise HTTPException(status_code=404, detail="Event not found")
 
     return event
+
+
+# -----------------------------
+# Get registered Users for an Event
+# -----------------------------
+@router.get("/{event_id}/users", response_model=EventUsersResponse)
+def get_event_users(event_id: uuid.UUID, db: Session = Depends(get_db)):
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    registrations = db.query(Registration).filter(Registration.event_id == event_id).all()
+    users_list = [
+        UserResponse(
+            id=reg.user.id,
+            name=reg.user.name,
+            role=reg.user.role,
+            department=reg.user.department,
+            year=reg.user.year,
+            email=reg.user.email
+        ) for reg in registrations
+    ]
+
+    volunteers_list = []
+    if event.volunteers:
+        volunteers = db.query(User).filter(User.id.in_(event.volunteers)).all()
+        volunteers_list = [
+            UserResponse(
+                id=v.id,
+                name=v.name,
+                role=v.role,
+                department=v.department,
+                year=v.year,
+                email=v.email
+            ) for v in volunteers
+        ]
+
+    return EventUsersResponse(
+        total_count=len(users_list),
+        users=users_list,
+        volunteers=volunteers_list
+    )
