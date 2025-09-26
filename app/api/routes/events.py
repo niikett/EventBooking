@@ -1,7 +1,11 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+import json
+import cloudinary.uploader
+from urllib.parse import urlparse
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.core import jwt_token
+from app.utils.utils_cloudinary import upload
 from app.models import Event, Registration, User
 from app.schemas.events import EventCreate, EventUpdate, EventResponse
 from app.core.config_db import get_db
@@ -16,7 +20,8 @@ router = APIRouter(
 # -----------------------------
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 def create_event(
-    event: EventCreate,
+    event_data: str = Form(...),
+    file: UploadFile = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(jwt_token.get_current_user)
 ):
@@ -25,7 +30,15 @@ def create_event(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admin can create events")
 
-    new_event = Event(**event.dict(), created_by=current_user.id)
+    try:
+        event_dict = json.loads(event_data)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid event data format")
+
+    if file:
+        event_dict["image_url"] = upload(file)
+
+    new_event = Event(**event_dict, created_by=current_user.id)
     db.add(new_event)
     db.flush()
     db.refresh(new_event)
@@ -46,12 +59,13 @@ def create_event(
 @router.put("/{event_id}", response_model=EventResponse)
 def update_event(
     event_id: uuid.UUID,
-    updates: EventUpdate,
+    updates: str = Form(...),
+    file: UploadFile = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(jwt_token.get_current_user)
 ):
     current_user = db.query(User).filter(User.id == current_user.id).first()
-    
+
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admin can update events")
 
@@ -59,7 +73,15 @@ def update_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    for key, value in updates.dict(exclude_unset=True).items():
+    try:
+        updates_dict = json.loads(updates)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid updates format")
+
+    if file:
+        updates_dict["image_url"] = upload(file)
+
+    for key, value in updates_dict.items():
         setattr(event, key, value)
 
     db.commit()
@@ -77,7 +99,7 @@ def delete_event(
     current_user: User = Depends(jwt_token.get_current_user)
 ):
     current_user = db.query(User).filter(User.id == current_user.id).first()
-    
+
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admin can delete events")
 
@@ -85,9 +107,19 @@ def delete_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
+    if event.image_url:
+        try:
+            path = urlparse(event.image_url).path  
+            public_id = "/".join(path.split("/")[-2:])
+            public_id = public_id.rsplit(".", 1)[0]
+            cloudinary.uploader.destroy(public_id)
+            print(f"Deleted Cloudinary file: {public_id}")
+        except Exception as e:
+            print(f"Failed to delete Cloudinary image: {e}")
+
     db.delete(event)
     db.commit()
-    return {"detail": "Event deleted"}
+    return {"detail": "Event and associated banner deleted"}
 
 
 # -----------------------------
