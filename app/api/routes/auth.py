@@ -10,14 +10,13 @@ from app.core import jwt_token
 from app.core.config_db import get_db
 
 router = APIRouter(
-    prefix="/auth", 
     tags=["auth"]
 )
 
 #####################################################################################################################################
 # sign-in
 @router.post(
-    "/sign-in",
+    "/login",
     status_code=status.HTTP_200_OK,
     response_model=TokenResponse
 )

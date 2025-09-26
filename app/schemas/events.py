@@ -12,7 +12,6 @@ class EventBase(BaseModel):
     capacity: int
     event_type: str
     fees: Optional[int] = None
-    image_url: Optional[str] = None
 
 
 class EventCreate(EventBase):
