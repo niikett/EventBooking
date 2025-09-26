@@ -42,7 +42,7 @@ def assign_volunteer(
         raise HTTPException(status_code=400, detail="Student is not registered for this event")
 
     if student_id not in event.volunteers:
-        event.volunteers.append(student_id)
+        event.volunteers = event.volunteers + [student_id]
 
     db.commit()
     db.refresh(event)
